@@ -111,7 +111,8 @@ RUN for file in $(find /usr/share/postgresql -name 'postgresql.conf.sample'); do
 # timescaledb-tune, as well as timescaledb-parallel-copy
 RUN echo "deb https://packagecloud.io/timescale/timescaledb/debian/ $(lsb_release -s -c) main" > /etc/apt/sources.list.d/timescaledb.list
 RUN curl -L -s -o - https://packagecloud.io/timescale/timescaledb/gpgkey | apt-key add -
-RUN apt-get update && apt-get install -y timescaledb-tools
+# For arm, installation of timescaledb-tools currently fails, therefore we ignore the failure here
+RUN apt-get update && apt-get install -y timescaledb-tools || true
 
 ## Entrypoints as they are from the Timescale image and its default alpine upstream repositories.
 ## This ensures the default interface (entrypoint) equals the one of the github.com/timescale/timescaledb-docker one,

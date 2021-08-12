@@ -17,6 +17,7 @@ DOCKER_EXTRA_BUILDARGS?=
 DOCKER_REGISTRY?=localhost:5000
 DOCKER_REPOSITORY?=timescale/timescaledb-ha
 DOCKER_PUBLISH_URLS?=$(DOCKER_REGISTRY)/$(DOCKER_REPOSITORY)
+DOCKER_BUILDX_PLATFORMS?=linux/arm64,linux/amd64
 DOCKER_TAG_POSTFIX?=
 DOCKER_TAG_PREPARE=$(PG_MAJOR)$(DOCKER_TAG_POSTFIX)
 DOCKER_TAG_LABELED=$(PG_MAJOR)$(DOCKER_TAG_POSTFIX)-labeled
@@ -53,7 +54,7 @@ VAR_VERSION_INFO=version_info-$(PG_MAJOR)$(DOCKER_TAG_POSTFIX).log
 # We label all the Docker Images with the versions of PostgreSQL, TimescaleDB and some other extensions
 # afterwards, by using introspection, as minor versions may differ even when using the same
 # Dockerfile
-DOCKER_BUILD_COMMAND=docker build  \
+DOCKER_BUILD_COMMAND=docker buildx build --platform "$(DOCKER_BUILDX_PLATFORMS)" --push \
 					 --build-arg ALLOW_ADDING_EXTENSIONS="$(ALLOW_ADDING_EXTENSIONS)" \
 					 --build-arg DEBIAN_REPO_MIRROR=$(DEBIAN_REPO_MIRROR) \
 					 --build-arg GITHUB_DOCKERLIB_POSTGRES_REF="$(GITHUB_DOCKERLIB_POSTGRES_REF)" \
