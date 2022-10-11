@@ -128,6 +128,11 @@ RUN for pg in ${PG_VERSIONS}; do apt-get install -y postgresql-${pg} postgresql-
 
 FROM compiler as builder
 
+RUN sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
+RUN wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add -
+RUN cp /etc/apt/sources.list /etc/apt/sources.list~
+RUN sed -Ei 's/^# deb-src /deb-src /' /etc/apt/sources.list
+
 RUN for pg in ${PG_VERSIONS}; do \
         apt-get install -y postgresql-${pg}-dbgsym postgresql-plpython3-${pg} postgresql-plperl-${pg} \
             postgresql-${pg}-pgextwlist postgresql-${pg}-hll postgresql-${pg}-pgrouting postgresql-${pg}-repack postgresql-${pg}-hypopg postgresql-${pg}-unit \
@@ -145,20 +150,25 @@ RUN for postgisv in ${POSTGIS_VERSIONS}; do \
 # Some Patroni prerequisites
 # This need to be done after the PostgreSQL packages have been installed,
 # to ensure we have the preferred libpq installations etc.
-RUN apt-get install -y python3-etcd python3-requests python3-pystache python3-kubernetes python3-pysyncobj
-RUN echo 'deb http://cz.archive.ubuntu.com/ubuntu kinetic main universe' >> /etc/apt/sources.list && \
-    apt-get update && \
-    apt-get install -y patroni=2.1.4-\* && \
-    head -n -1 /etc/apt/sources.list > /etc/apt/sources.list.tmp; mv /etc/apt/sources.list.tmp /etc/apt/sources.list; \
-    apt-get update
+# RUN apt-get install -y python3-etcd python3-requests python3-pystache python3-kubernetes python3-pysyncobj
+# RUN echo 'deb http://cz.archive.ubuntu.com/ubuntu kinetic main universe' >> /etc/apt/sources.list && \
+#     apt-get update && \
+#     apt-get install -y patroni=2.1.4-\* && \
+#     head -n -1 /etc/apt/sources.list > /etc/apt/sources.list.tmp; mv /etc/apt/sources.list.tmp /etc/apt/sources.list; \
+#     apt-get update
 # Patch Patroni code with changes from https://github.com/zalando/patroni/pull/2318.
 # NOTE: This is a temporary solution until changes land upstream.
-ARG TIMESCALE_STATIC_PRIMARY
-RUN if [ "${TIMESCALE_STATIC_PRIMARY}" != "" ]; then \
-    wget -qO- https://raw.githubusercontent.com/timescale/patroni/v2.2.0-beta.4/patroni/ha.py > /usr/lib/python3/dist-packages/patroni/ha.py && \
-    wget -qO- https://raw.githubusercontent.com/timescale/patroni/v2.2.0-beta.4/patroni/config.py > /usr/lib/python3/dist-packages/patroni/config.py && \
-    wget -qO- https://raw.githubusercontent.com/timescale/patroni/v2.2.0-beta.4/patroni/validator.py > /usr/lib/python3/dist-packages/patroni/validator.py; \
-    fi
+# ARG TIMESCALE_STATIC_PRIMARY
+# RUN if [ "${TIMESCALE_STATIC_PRIMARY}" != "" ]; then \
+#     wget -qO- https://raw.githubusercontent.com/timescale/patroni/v2.2.0-beta.4/patroni/ha.py > /usr/lib/python3/dist-packages/patroni/ha.py && \
+#     wget -qO- https://raw.githubusercontent.com/timescale/patroni/v2.2.0-beta.4/patroni/config.py > /usr/lib/python3/dist-packages/patroni/config.py && \
+#     wget -qO- https://raw.githubusercontent.com/timescale/patroni/v2.2.0-beta.4/patroni/validator.py > /usr/lib/python3/dist-packages/patroni/validator.py; \
+#     fi
+
+# Patroni and Spilo Dependencies
+# This need to be done after the PostgreSQL packages have been installed,
+# to ensure we have the preferred libpq installations etc.
+RUN apt-get install -y patroni
 
 RUN for file in $(find /usr/share/postgresql -name 'postgresql.conf.sample'); do \
         # We want timescaledb to be loaded in this image by every created cluster
